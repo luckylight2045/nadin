@@ -64,28 +64,33 @@ export class UserService {
     return this.repo.save(user);
   }
 
-  async createUserTask(userId: number, taskObj: any) {
-    const user = await this.findUserById(userId);
-
-    if (!user) {
-      throw new BadRequestException();
-    }
-
+  async createUserTask(userId: number, taskObj: Task) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      user.tasks = [];
-      user.tasks.push(taskObj);
+      const user = await this.repo.findOne({
+        where: {
+          id: userId,
+        },
+        relations: {
+          tasks: true,
+        },
+      });
 
+      if (!user) {
+        throw new BadRequestException();
+      }
+
+      user.tasks = [...user.tasks, taskObj];
       await this.repo.save(user);
 
       const task1 = this.task.create({
         title: taskObj.title,
         description: taskObj.description,
         attachment: taskObj.attachment,
-        user: user,
+        user,
       });
 
       await this.task.save(task1);
@@ -101,7 +106,9 @@ export class UserService {
 
   async getAllTasks(userId: number) {
     const user = await this.findUserById(userId);
-    const tasks = await this.task.findBy({ user });
+    const tasks = await this.task.find({
+      where: [user],
+    });
 
     console.log(tasks);
     return tasks;
@@ -137,6 +144,45 @@ export class UserService {
     user.phoneNumber = body.phoneNumber ? body.phoneNumber : user.phoneNumber;
 
     await this.repo.save(user);
+  }
+
+  async deleteUser(id: number) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const user = await this.repo.findOne({
+        where: {
+          id,
+        },
+        relations: {
+          tasks: true,
+        },
+      });
+
+      if (!user) {
+        throw new BadRequestException();
+      }
+
+      await this.repo.remove(user);
+
+      const task1 = await this.task.find({
+        where: {
+          user,
+        },
+      });
+
+      console.log(task1);
+
+      await this.task.remove(task1);
+
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async findUserByEmail(email: string) {

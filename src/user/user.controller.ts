@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -63,5 +64,13 @@ export class UserController {
   @Patch('update')
   async updateUser(@Body() body: UserUpdateDto, @CurrentUser() userId: number) {
     return await this.userService.updateUser(body, userId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard)
+  @UseInterceptors(RoleInterceptor)
+  @Delete('delete/:id')
+  async deleteUser(@Param('id') id: string) {
+    return await this.userService.deleteUser(parseInt(id));
   }
 }
