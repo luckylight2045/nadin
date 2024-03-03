@@ -15,6 +15,8 @@ export class Task {
   @Column()
   attachment: string;
 
-  @ManyToOne(() => User, (user) => user.tasks)
+  @ManyToOne(() => User, (user) => user.tasks, {
+    onDelete: 'CASCADE',
+  })
   user: User;
 }

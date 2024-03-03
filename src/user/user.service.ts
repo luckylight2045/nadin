@@ -165,17 +165,10 @@ export class UserService {
         throw new BadRequestException();
       }
 
-      await this.repo.remove(user);
+      console.log('life');
+      this.repo.delete({ id });
 
-      const task1 = await this.task.find({
-        where: {
-          user,
-        },
-      });
-
-      console.log(task1);
-
-      await this.task.remove(task1);
+      await this.task.delete({ user });
 
       await queryRunner.commitTransaction();
     } catch (err) {
