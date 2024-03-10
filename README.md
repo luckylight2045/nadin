@@ -28,7 +28,7 @@
 
 ## Running the app
 
-docker docker-compose docker-compose.yml up --build
+docker-compose -f docker-compose.yml up --build
 ```
 
 
